@@ -123,3 +123,70 @@ Refactored the comparison pipeline to improve maintainability and add new functi
 - Constants: `syllable_smoothing_window = 11`
 
 The refactored pipeline automatically runs both comparison scenarios and handles all conditional logic internally, making it much easier to maintain and extend.
+
+## 2025-01-27 18:30 - Extended Comparison Analysis with HTML Reporting
+
+**Problem**: The existing comparison script provided basic statistical comparisons and visualizations, but lacked comprehensive analysis of behavioral sequences, latent space representations, advanced statistical testing, and user-friendly reporting capabilities.
+
+**Solution**: Created `scripts/compare_results_extended.py` - a comprehensive analysis pipeline that extends the existing comparison functionality with advanced statistical methods, machine learning analysis, and professional HTML reporting.
+
+**Key Features**:
+
+*Statistical Analysis*:
+- Frame-by-frame accuracy assessment using sklearn classification metrics
+- Adjusted Rand Index and Normalized Mutual Information for clustering agreement
+- Spearman and Pearson correlation analysis for syllable count distributions
+- Kolmogorov-Smirnov test for behavioral bout duration distributions
+- Full classification report with precision, recall, and F1-scores per syllable
+
+*Behavioral Sequence Analysis*:
+- Syllable transition probability matrices and entropy calculations
+- Behavioral bout duration statistics (mean, median, maximum, standard deviation)
+- Transition pattern comparison between training and apply datasets
+- Top 10 most frequent transitions identification
+
+*Latent Space Analysis*:
+- PCA dimensionality reduction on 4D latent state representations
+- t-SNE embedding for non-linear structure visualization
+- Dataset and syllable-based clustering visualization
+- Explained variance analysis for principal components
+
+*Advanced Visualizations*:
+- Static plots: latent space PCA/t-SNE, transition heatmaps, syllable repertoire analysis, session-wise comparisons
+- Interactive plots: Plotly-based confusion matrices and latent space explorers with hover functionality
+- Professional matplotlib styling with consistent color schemes
+
+*HTML Report Generation*:
+- Comprehensive single-page report with embedded visualizations
+- Executive summary with key findings and interpretations
+- Responsive design with modern CSS styling
+- Base64-encoded images for standalone report portability
+- Interactive plot links for detailed exploration
+
+**Analysis Workflow**:
+1. Data loading and validation with comprehensive statistics
+2. Frame-by-frame alignment for direct comparison accuracy
+3. Statistical testing suite with multiple correlation and distribution tests
+4. Behavioral pattern analysis including transitions and bout characteristics
+5. Dimensionality reduction and clustering analysis of latent representations
+6. Static and interactive visualization generation
+7. JSON results serialization with numpy type conversion
+8. Professional HTML report compilation with Jinja2 templating
+
+**Code Structure**:
+- Main class: `ExtendedAnalysis` with modular analysis methods
+- Analysis methods: `statistical_comparisons()`, `behavioral_sequence_analysis()`, `latent_space_analysis()`
+- Visualization methods: `generate_advanced_plots()`, `generate_interactive_plots()`
+- Plotting functions: `_plot_latent_space_pca()`, `_plot_transition_heatmaps()`, `_plot_syllable_repertoire()`
+- Report generation: `generate_html_report()` with comprehensive templating
+- Main function: `run_extended_analysis()` with configurable modes
+
+**Output Files**:
+- HTML report: `kpms_project/{model_name}/extended_analysis/comparison_report.html`
+- Static plots: `kpms_project/{model_name}/extended_comparison_plots/*.png`
+- Interactive plots: `kpms_project/{model_name}/extended_comparison_plots/*.html`
+- Results JSON: `kpms_project/{model_name}/extended_analysis/extended_analysis_results.json`
+
+**Dependencies**: Extends existing polars/matplotlib stack with scipy, sklearn, plotly, jinja2, and pandas for comprehensive analysis capabilities. Compatible with both "train_apply" and "train_apply_all" comparison modes from the base script.
+
+**Technical Notes**: The script handles large datasets efficiently through strategic subsampling for t-SNE (max 5000 points) and interactive plots (max 10000 points). All numpy data types are properly converted for JSON serialization, and comprehensive error handling ensures robust execution.
