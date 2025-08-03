@@ -124,69 +124,39 @@ Refactored the comparison pipeline to improve maintainability and add new functi
 
 The refactored pipeline automatically runs both comparison scenarios and handles all conditional logic internally, making it much easier to maintain and extend.
 
-## 2025-01-27 18:30 - Extended Comparison Analysis with HTML Reporting
+## 2025-08-03 11:26: Session Name Bug Discovery and Modeling Software Inconsistency
 
-**Problem**: The existing comparison script provided basic statistical comparisons and visualizations, but lacked comprehensive analysis of behavioral sequences, latent space representations, advanced statistical testing, and user-friendly reporting capabilities.
+**Problem**: Initial analysis of `all_data_syllable_counts_scatter.png` showed poor agreement between training and apply results, but this was due to a bug in the `extract_session_name()` function rather than a genuine modeling issue.
 
-**Solution**: Created `scripts/compare_results_extended.py` - a comprehensive analysis pipeline that extends the existing comparison functionality with advanced statistical methods, machine learning analysis, and professional HTML reporting.
+**Root Cause**: The regex pattern `r"^(AA\d+[_-]?\d*[_-]?\d*)"` was extracting session names like `AA049_` from both `AA049_OF1` and `AA049_OF2` files, causing different recording sessions to be treated as duplicates. This led to inflated syllable counts in the apply_all_results dataset.
 
-**Key Features**:
+**Investigation Process**:
+1. **Session name verification**: Confirmed that `AA049_OF1` and `AA049_OF2` are different recordings (55,179 vs 57,686 frames, 28 vs 50 unique syllables)
+2. **Data integrity check**: Found that apply_all_results contained duplicate frames due to session name collision
+3. **Script validation**: Systematically verified that the comparison logic is sound and fair
 
-*Statistical Analysis*:
-- Frame-by-frame accuracy assessment using sklearn classification metrics
-- Adjusted Rand Index and Normalized Mutual Information for clustering agreement
-- Spearman and Pearson correlation analysis for syllable count distributions
-- Kolmogorov-Smirnov test for behavioral bout duration distributions
-- Full classification report with precision, recall, and F1-scores per syllable
+**Fix Applied**: Updated regex pattern to `r"^(AA\d+[_-]?\d*[_-]?\d*_OF\d+)"` to include the OF1/OF2 distinction in session names.
 
-*Behavioral Sequence Analysis*:
-- Syllable transition probability matrices and entropy calculations
-- Behavioral bout duration statistics (mean, median, maximum, standard deviation)
-- Transition pattern comparison between training and apply datasets
-- Top 10 most frequent transitions identification
+**Post-Fix Verification**: 
+- Training data: 21 sessions (all OF2), 1,160,367 frames
+- Training subset: 21 sessions (all OF2), 1,160,367 frames  
+- Session counts identical, frame ranges identical (1-57,696)
 
-*Latent Space Analysis*:
-- PCA dimensionality reduction on 4D latent state representations
-- t-SNE embedding for non-linear structure visualization
-- Dataset and syllable-based clustering visualization
-- Explained variance analysis for principal components
+**Genuine Modeling Issue Discovered**: After fixing the session name bug, the comparison revealed a real problem with the modeling software. The same frames are labeled with completely different syllables:
 
-*Advanced Visualizations*:
-- Static plots: latent space PCA/t-SNE, transition heatmaps, syllable repertoire analysis, session-wise comparisons
-- Interactive plots: Plotly-based confusion matrices and latent space explorers with hover functionality
-- Professional matplotlib styling with consistent color schemes
+**Frame-level comparison (AA049_OF2, frames 1-10)**:
+- Training mode: frames 1-4 = syllable 17, frames 5-10 = syllable 23
+- Apply mode: frames 1-10 = syllable 11
 
-*HTML Report Generation*:
-- Comprehensive single-page report with embedded visualizations
-- Executive summary with key findings and interpretations
-- Responsive design with modern CSS styling
-- Base64-encoded images for standalone report portability
-- Interactive plot links for detailed exploration
+**Syllable frequency patterns**:
+- Training mode: syllables 0-9 most frequent (5,682, 4,650, 4,159, etc.)
+- Apply mode: syllables 12, 28, 18 most frequent (4,848, 3,548, 1,647, etc.)
 
-**Analysis Workflow**:
-1. Data loading and validation with comprehensive statistics
-2. Frame-by-frame alignment for direct comparison accuracy
-3. Statistical testing suite with multiple correlation and distribution tests
-4. Behavioral pattern analysis including transitions and bout characteristics
-5. Dimensionality reduction and clustering analysis of latent representations
-6. Static and interactive visualization generation
-7. JSON results serialization with numpy type conversion
-8. Professional HTML report compilation with Jinja2 templating
+**Duration Histogram Evidence**: The `all_data_duration_histogram.png` shows a flat distribution for the apply all dataset, suggesting the model isn't fitting properly and may be behaving like an untrained model.
 
-**Code Structure**:
-- Main class: `ExtendedAnalysis` with modular analysis methods
-- Analysis methods: `statistical_comparisons()`, `behavioral_sequence_analysis()`, `latent_space_analysis()`
-- Visualization methods: `generate_advanced_plots()`, `generate_interactive_plots()`
-- Plotting functions: `_plot_latent_space_pca()`, `_plot_transition_heatmaps()`, `_plot_syllable_repertoire()`
-- Report generation: `generate_html_report()` with comprehensive templating
-- Main function: `run_extended_analysis()` with configurable modes
+**Next Steps**: 
+1. Delete existing apply results and re-run `apply.py` on the whole dataset to confirm the model actually learned
+2. If the same inconsistency persists, focus debugging efforts on the keypoint-moseq model itself
+3. The comparison script is confirmed to be working correctly - the issue is in the modeling software
 
-**Output Files**:
-- HTML report: `kpms_project/{model_name}/extended_analysis/comparison_report.html`
-- Static plots: `kpms_project/{model_name}/extended_comparison_plots/*.png`
-- Interactive plots: `kpms_project/{model_name}/extended_comparison_plots/*.html`
-- Results JSON: `kpms_project/{model_name}/extended_analysis/extended_analysis_results.json`
-
-**Dependencies**: Extends existing polars/matplotlib stack with scipy, sklearn, plotly, jinja2, and pandas for comprehensive analysis capabilities. Compatible with both "train_apply" and "train_apply_all" comparison modes from the base script.
-
-**Technical Notes**: The script handles large datasets efficiently through strategic subsampling for t-SNE (max 5000 points) and interactive plots (max 10000 points). All numpy data types are properly converted for JSON serialization, and comprehensive error handling ensures robust execution.
+**Code Location**: Fixed `extract_session_name()` function in `scripts/compare_results.py` line 33-42.
