@@ -123,3 +123,40 @@ Refactored the comparison pipeline to improve maintainability and add new functi
 - Constants: `syllable_smoothing_window = 11`
 
 The refactored pipeline automatically runs both comparison scenarios and handles all conditional logic internally, making it much easier to maintain and extend.
+
+## 2025-08-03 11:26: Session Name Bug Discovery and Modeling Software Inconsistency
+
+**Problem**: Initial analysis of `all_data_syllable_counts_scatter.png` showed poor agreement between training and apply results, but this was due to a bug in the `extract_session_name()` function rather than a genuine modeling issue.
+
+**Root Cause**: The regex pattern `r"^(AA\d+[_-]?\d*[_-]?\d*)"` was extracting session names like `AA049_` from both `AA049_OF1` and `AA049_OF2` files, causing different recording sessions to be treated as duplicates. This led to inflated syllable counts in the apply_all_results dataset.
+
+**Investigation Process**:
+1. **Session name verification**: Confirmed that `AA049_OF1` and `AA049_OF2` are different recordings (55,179 vs 57,686 frames, 28 vs 50 unique syllables)
+2. **Data integrity check**: Found that apply_all_results contained duplicate frames due to session name collision
+3. **Script validation**: Systematically verified that the comparison logic is sound and fair
+
+**Fix Applied**: Updated regex pattern to `r"^(AA\d+[_-]?\d*[_-]?\d*_OF\d+)"` to include the OF1/OF2 distinction in session names.
+
+**Post-Fix Verification**: 
+- Training data: 21 sessions (all OF2), 1,160,367 frames
+- Training subset: 21 sessions (all OF2), 1,160,367 frames  
+- Session counts identical, frame ranges identical (1-57,696)
+
+**Genuine Modeling Issue Discovered**: After fixing the session name bug, the comparison revealed a real problem with the modeling software. The same frames are labeled with completely different syllables:
+
+**Frame-level comparison (AA049_OF2, frames 1-10)**:
+- Training mode: frames 1-4 = syllable 17, frames 5-10 = syllable 23
+- Apply mode: frames 1-10 = syllable 11
+
+**Syllable frequency patterns**:
+- Training mode: syllables 0-9 most frequent (5,682, 4,650, 4,159, etc.)
+- Apply mode: syllables 12, 28, 18 most frequent (4,848, 3,548, 1,647, etc.)
+
+**Duration Histogram Evidence**: The `all_data_duration_histogram.png` shows a flat distribution for the apply all dataset, suggesting the model isn't fitting properly and may be behaving like an untrained model.
+
+**Next Steps**: 
+1. Delete existing apply results and re-run `apply.py` on the whole dataset to confirm the model actually learned
+2. If the same inconsistency persists, focus debugging efforts on the keypoint-moseq model itself
+3. The comparison script is confirmed to be working correctly - the issue is in the modeling software
+
+**Code Location**: Fixed `extract_session_name()` function in `scripts/compare_results.py` line 33-42.

@@ -34,7 +34,8 @@ def extract_session_name(filename: str) -> str:
     """Extract shortened session name from CSV filename."""
     # Extract the part before the first timestamp (e.g., AA2_6-1_OF2.000_BehaviorVid)
     # Then take just the animal/session identifier (e.g., AA2_6-1)
-    match = re.match(r"^(AA\d+[_-]?\d*[_-]?\d*)", filename)
+    # Updated to include OF1/OF2 part to distinguish different recordings
+    match = re.match(r"^(AA\d+[_-]?\d*[_-]?\d*_OF\d+)", filename)
     if match:
         return match.group(1)
     # Fallback: take everything before the first timestamp
@@ -225,7 +226,7 @@ def duration_histogram(results_parquet: Path, apply_results_parquet: Path, outpu
 
     # Save the plot
     output_file.parent.mkdir(parents=True, exist_ok=True)
-    plot.save(output_file, dpi=300)
+    plot.save(output_file, dpi=300, bbox_inches="tight")
 
     # Print summary statistics for filtered data
     stats_summary = filtered_durations.group_by("dataset").agg(
@@ -309,6 +310,12 @@ def syllable_confusion_matrix(
     if n_syllables is not None:
         # Only include apply syllables that are in the training top N
         all_syllables = syllable_order
+        # Filter confusion data to only include syllables in the allowed set
+        allowed_syllables = set(syllable_order)
+        confusion_pandas = confusion_pandas[
+            confusion_pandas["train_syllable"].isin(allowed_syllables) & 
+            confusion_pandas["apply_syllable"].isin(allowed_syllables)
+        ]
     else:
         all_syllables = syllable_order + [s for s in sorted(apply_syllables) if s not in syllable_order]
     confusion_matrix = np.zeros((len(all_syllables), len(all_syllables)))

@@ -11,16 +11,16 @@ model, data, metadata, current_iter = kpms.load_checkpoint(project_dir, model_na
 
 model = kpms.update_hypparams(model, kappa=1e3)
 
-# model = kpms.fit_model(
-#     model,
-#     data,
-#     metadata,
-#     project_dir,
-#     model_name,
-#     ar_only=False,
-#     start_iter=current_iter,
-#     num_iters=current_iter + 450,
-# )[0]
+model = kpms.fit_model(
+    model,
+    data,
+    metadata,
+    project_dir,
+    model_name,
+    ar_only=False,
+    start_iter=current_iter,
+    num_iters=current_iter + 450,
+)[0]
 
 
 kpms.reindex_syllables_in_checkpoint(project_dir, model_name)
